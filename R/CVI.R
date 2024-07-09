@@ -172,16 +172,19 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     if (abs(sum(f[[m]]) - sum(f[[m + 1]])) < 0.000001){
       break
     }
-    cat("outer loop: ", m,"\n", sep="")
-    print(f[[m + 1]])
-    cat('\n')
+    message("outer loop: ", m,"\n", f[[m + 1]], '\n', sep="")
   }
 
-  plot(sapply(f, sum)[-1], type="l")
   alpha0 <- W1/W2
   clustering <- apply(Plog, MARGIN = 1, FUN=which.max)
   clust <- table(clustering)
   clustnum <- length(unique(clustering))
-  list0 <- list("alpha"=alpha0, "Clusters"=clustnum, "Proportions"=clust)
-  return(list0)
+
+  posterior <- list("alpha"=alpha0, "Clusters"=clustnum, "Proportions"=clust, "Clustering" = Plog)
+  optimisation <- list("ELBO" = f)
+
+  output <-  list("posterior" = posterior, "optimisation" = optimisation)
+  class(output) <- "CVIoutput"
+
+  return(output)
 }
