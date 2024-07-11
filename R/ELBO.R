@@ -16,10 +16,11 @@
 #' @return value of the ELBO function
 #' @export
 #'
-#' @examples ELBO(N = 50, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
-#' X = matrix(1, nrow = 50, ncol = 2), W1 = 0.01, W2 = 0.01,
-#' L1 = matrix(0.01, nrow = 10, ncol = 2), L2 = matrix(0.01, nrow = 10, ncol = 1
-#' ), Plog = matrix(-3, nrow = 50, ncol = 10))
+#' @examples ELBO(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
+#' X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)), nrow = 100,
+#' ncol = 2), W1 = 0.01, W2 = 0.01, L1 = matrix(0.01, nrow = 10, ncol = 2),
+#' L2 = matrix(0.01, nrow = 10, ncol = 1),
+#' Plog = matrix(-3, nrow = 100, ncol = 10))
 ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   Mu0 <- matrix(c(rep(0,D)), nrow=1)
   C00 <- diag(D)/L20
@@ -36,22 +37,14 @@ ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   e0 <- s1*log(s2) - lgamma(s1) + (s1 - 1)*(digamma(W1)-log(W2)) - s2*(W1/W2)
 
   #the z's
-  e10 <- rep(NA, T0)
-  for (i in 1:(T0-1)){
-    qni <- sum(P0[, i])
-    vqni <- sum(P0[,i]*(1-P0[,i]))
-    qnj <- sum(P0[,(i+1):T0])
-    I <- i
-    vqnj <- sum(apply(P0, 1, f0, I=I))
-    e10[i] <- lgamma(1 + qni) + 0.5*trigamma(1 + qni)*vqni + lgamma((W1/W2) +
-      qnj) + 0.5*trigamma((W1/W2) + qnj)*(vqnj + W1/(W2^2)) - lgamma(1 + (W1/W2)
-      + qni + qnj) - 0.5*trigamma(1 + (W1/W2) + qni + qnj)*(vqni + vqnj +
-      W1/(W2^2))
-  }
-  e10[T0] <- lgamma(1 + sum(P0[, T0])) + 0.5*trigamma(1 + sum(P0[, T0]))*
-    sum(P0[, T0]*(1 - P0[, T0])) + lgamma(W1/W2) + 0.5*trigamma(W1/W2)*W1/(W2^2)
-    - lgamma(1 + (W1/W2) + sum(P0[, T0])) - 0.5*trigamma(1 + (W1/W2) +
-    sum(P0[, T0]))*(sum(P0[, T0]*(1 - P0[, T0])) + W1/(W2^2))
+  eni <- colSums(P0)
+  vni <- colSums(P0*(1 - P0))
+  enj <- rowSums(apply(P0, 1, f0))
+  vnj <- rowSums(apply(P0, 1, f1))
+  e10 <- lgamma(1 + eni) + 0.5*trigamma(1 + eni)*vni +
+    lgamma((W1/W2) + enj) + 0.5*trigamma((W1/W2) + enj)*((W1/(W2^2)) + vnj) -
+    lgamma(1 + (W1/W2)+eni+enj) -
+    0.5*trigamma(1 + (W1/W2)+eni+enj)*((W1/(W2^2))+vni+vnj)
   e1 <- T0*(digamma(W1) - log(W2)) + sum(e10)
 
   #the eta's

@@ -18,10 +18,11 @@
 #' probability allocation and the proportions of each cluster
 #' @export
 #'
-#' @examples CVI(N = 50, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
-#' X = matrix(1, nrow = 50, ncol = 2), W1 = 0.01, W2 = 0.01,
+#' @examples CVI(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
+#' X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
+#' nrow = 100, ncol = 2), W1 = 0.01, W2 = 0.01,
 #' L1 = matrix(0.01, nrow = 10, ncol = 2), L2 = matrix(0.01, nrow = 10, ncol = 1
-#' ), Plog = matrix(-3, nrow = 50, ncol = 10), maxit = 1000)
+#' ), Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
 CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
   C0 <- diag(D)
   #the mean vector of the parameters eta_i
@@ -41,87 +42,27 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
       P1 <- P0[-n,]
-      P2 <- rep(NA, T0)
-      #first element
 
-      #expectation of the indicator variables N_i, where i = 1
-      p1qni <- sum(P1[, 1])
-      #variance of the corresponding indicator variables
-      p1vqni <- sum(P1[, 1]*(1 - P1[, 1]))
-      #expectation of the indicator variables N_>i, where i = 1
-      p1qnj <- sum(P1[, 2:T0])
-      #variance of the corresponding variables
-      I <- 1
-      p1vqnj <- sum(apply(P1, 1, f0, I=I))
-      #update of P[n, 1]
-      P2[1] <- log(1 + p1qni) - 0.5*p1vqni/((1 + p1qni)^2) - log(1 + p1qni + p1qnj
-        + (W1/W2)) + 0.5*(p1vqni + p1vqnj + (W1/(W2^2)))/((1 + p1qni + p1qnj +
-        (W1/W2))^2) + (L1[1,, drop=FALSE]/L2[1,1]) %*% t(X[n,, drop=FALSE]) -
-        0.5*((L1[1,, drop=FALSE]/L2[1,1]) %*% (t(L1[1,, drop=FALSE])/L2[1,1]) +
-        D/L2[1,1])
+      p_eni <- colSums(P1)
+      p_vni <- colSums(P1*(1-P1))
+      p_enj <- rowSums(apply(P1, 1, f0))
+      p_vnj <- rowSums(apply(P1, 1, f1))
 
-      #other elements except the last
-      for (i in 2:(T0 - 1)){
-        #expectation of the indicator variables N_i
-        pqni <- sum(P1[, i])
-        #variance of the corresponding indicator variables
-        pvqni <- sum(P1[, i]*(1 - P1[, i]))
-        #expectation of the indicator variables N_>i
-        pqnj <- sum(P1[, (i + 1):T0])
-        #variance of the corresponding variables
-        I <- i
-        pvqnj <- sum(apply(P1, 1, f0, I=I))
-        # 1st part of the update of P[n, i]
-        P20 <- log(1 + pqni) - 0.5*pvqni/((1 + pqni)^2) - log(1 + pqni + pqnj +
-          (W1/W2)) + 0.5*(pvqni + pvqnj + (W1/(W2^2)))/((1 + pqni + pqnj +
-          (W1/W2))^2)
+      P20 <- log(1 + p_eni) - p_vni/((1 + p_eni)^2) - log(1 + p_eni + p_enj +
+        (W1/W2)) + (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
 
-        #for i>1, the update includes j terms where j<i
-        P21 <- rep(NA, (i - 1))
-        for (j in 1:(i - 1)){
-          #expectation of N_j
-          pjqni <- sum(P1[, j])
-          #corresponding variance
-          pjvqni <- sum(P1[, j]*(1 - P1[, j]))
-          # expectation of N_>j
-          pjqnj <- sum(P1[, (j + 1):T0])
-          #corresponding variance
-          I=j
-          pjvqnj <- sum(apply(P1, 1, f0, I=I))
-          P21[j] <- log((W1/W2) + pjqnj) - 0.5*(pjvqnj + (W1/(W2^2)))/(((W1/W2) +
-            pjqnj)^2) - log(1 + (W1/W2) + pjqni + pjqnj) + 0.5*(pjvqni + pjvqnj +
-            (W1/(W2^2)))/((1 + (W1/W2) + pjqni + pjqnj)^2)
-        }
-        #update of P[n, i]
-        P2[i] <- P20 + sum(P21) +
-          (L1[i,, drop=FALSE]/L2[i,1]) %*% t(X[n,, drop=FALSE]) -
+      P21 <- log((W1/W2) + p_enj) - (p_vnj + (W1/(W2^2)))/(((W1/W2) + p_enj)^2) -
+        log(1 + p_eni + p_enj + (W1/W2)) +
+        (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
+      P22 <- c(0, cumsum(P21)[1:(T0-1)])
+
+      P23 <- rep(NA, T0)
+      for (i in 1:T0){
+        P23[i] = (L1[i,, drop=FALSE]/L2[i,1]) %*% t(X[n,, drop=FALSE]) -
           0.5*((L1[i,, drop=FALSE]/L2[i,1]) %*% (t(L1[i,, drop=FALSE])/L2[i,1])
-               + D/L2[i,1])
+          + D/L2[i,1])
       }
-
-      #last term
-      Pt0 <- log(1 + sum(P1[, T0])) - 0.5*sum(P1[, T0]*(1 - P1[, T0]))/((1 +
-        sum(P1[, T0]))^2) - log(1 + sum(P1[, T0]) + (W1/W2)) +
-        0.5*(sum(P1[, T0]*(1 - P1[, T0]))+(W1/(W2^2)))/((1 + sum(P1[, T0]) +
-        (W1/W2))^2)
-
-      #similar to previous step, j = T0-1 terms to be computed here as well
-      Pt1 <- rep(NA, (T0 - 1))
-      for (j in 1:(T0 - 1)){
-        ptqni <- sum(P1[, j])
-        ptvqni <- sum(P1[, j]*(1 - P1[, j]))
-        ptqnj <- sum(P1[,(j+1):T0])
-        I <- j
-        ptvqnj <- sum(apply(P1, 1, f0, I=I))
-        Pt1[j] <- log((W1/W2) + ptqnj) - 0.5*(ptvqnj + (W1/(W2^2)))/(((W1/W2) +
-          ptqnj)^2) - log(1 + (W1/W2) + ptqni + ptqnj) +
-          0.5*(ptvqni + ptvqnj + (W1/(W2^2)))/((1 + (W1/W2) + ptqni + ptqnj)^2)
-      }
-      #update of P[n, T0]
-      P2[T0] <- Pt0 + sum(Pt1) +
-        (L1[T0,, drop=FALSE]/L2[T0,1]) %*% t(X[n,, drop=FALSE]) -
-        0.5*((L1[T0,, drop=FALSE]/L2[T0,1]) %*%
-        (t(L1[T0,, drop=FALSE])/L2[T0,1]) + D/L2[T0,1])
+      P2 <- P20 + P22 + P23
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
@@ -144,29 +85,21 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
       #update of the 2nd parameter value of eta_i
       L2[i, 1] <- L20 + sum(Pf0[, i])
     }
+
     #update of the shape parameter of alpha
     W1 <- s1 + l0 - 1
     #update of the rate parameter of alpha
-    W20 <- rep(NA, l0)
-    for (i in 1:(l0-1)){
-      #expectation of N_i
-      wqni <- sum(Pf0[, i])
-      #corresponding variance
-      wvqni <- sum(Pf0[, i]*(1 - P00[, i]))
-      #expectation of N_>i
-      wqnj <- sum(Pf0[, (i + 1):T0])
-      #corresponding variance
-      I <- i
-      wvqnj <- sum(apply(Pf0, 1, f0, I = I))
-
-      W20[i] <- log(0.0000001 + wqni + wqnj) -
-        0.5*(wvqnj + wvqni)/((0.0000001 + wqni + wqnj)^2) -
-        log(0.0000001 + wqnj) + 0.5*wvqnj/((0.0000001 + wqnj)^2)
-    }
-    W20[l0] <- log(0.0000001 + sum(Pf0[, l0])) -
-      0.5*sum(Pf0[, l0]*(1 - Pf0[, l0]))/((0.0000001 + sum(Pf0[, l0]))^2) -
-      log(1.0000001)
-    W2 <- s2 + sum(W20)
+    a_eni <- colSums(Pf0[,1:l0])
+    a_vni <- colSums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
+    a_enj <- rowSums(apply(Pf0[,1:l0], 1, f0))
+    a_vnj <- rowSums(apply(Pf0[,1:l0], 1, f1))
+    W20 <- log(0.00001 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
+      0.5*(a_vni[1:(l0 - 1)] + a_vnj[1:(l0 - 1)])/((0.00001 + a_eni[1:(l0 - 1)]
+      + a_enj[1:(l0 - 1)])^2) - log(0.00001 + a_enj[1:(l0 - 1)]) +
+      0.5*a_vnj[1:(l0 - 1)]/((0.00001 + a_enj[1:(l0 - 1)])^2)
+    W21 <- log(0.00001 + a_eni[l0]) - 0.5*a_vni[l0]/((0.00001 + a_eni[l0])^2) -
+      log(1.00001)
+    W2 <- s2  + sum(W20) + W21
 
     f[[m+1]] <- ELBO(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog)
     if (abs(sum(f[[m]]) - sum(f[[m + 1]])) < 0.000001){
