@@ -18,8 +18,8 @@
 #' probability allocation and the proportions of each cluster
 #' @export
 #'
-#' @examples CVI(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
-#' X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
+#' @examples CVI(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01,
+#' L20 = 0.01, X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
 #' nrow = 100, ncol = 2), W1 = 0.01, W2 = 0.01,
 #' L1 = matrix(0.01, nrow = 10, ncol = 2), L2 = matrix(0.01, nrow = 10, ncol = 1
 #' ), Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
@@ -89,16 +89,17 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     #update of the shape parameter of alpha
     W1 <- s1 + l0 - 1
     #update of the rate parameter of alpha
+    a0 <- l0/log(N)
     a_eni <- colSums(Pf0[,1:l0])
     a_vni <- colSums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
     a_enj <- rowSums(apply(Pf0[,1:l0], 1, f0))
     a_vnj <- rowSums(apply(Pf0[,1:l0], 1, f1))
-    W20 <- log(0.00001 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
-      0.5*(a_vni[1:(l0 - 1)] + a_vnj[1:(l0 - 1)])/((0.00001 + a_eni[1:(l0 - 1)]
-      + a_enj[1:(l0 - 1)])^2) - log(0.00001 + a_enj[1:(l0 - 1)]) +
-      0.5*a_vnj[1:(l0 - 1)]/((0.00001 + a_enj[1:(l0 - 1)])^2)
-    W21 <- log(0.00001 + a_eni[l0]) - 0.5*a_vni[l0]/((0.00001 + a_eni[l0])^2) -
-      log(1.00001)
+    W20 <- log(a0 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
+      0.5*(a_vni[1:(l0 - 1)] + a_vnj[1:(l0 - 1)])/((a0 + a_eni[1:(l0 - 1)]
+      + a_enj[1:(l0 - 1)])^2) - log(a0 + a_enj[1:(l0 - 1)]) +
+      0.5*a_vnj[1:(l0 - 1)]/((a0 + a_enj[1:(l0 - 1)])^2)
+    W21 <- log(a0 + a_eni[l0]) - 0.5*a_vni[l0]/((a0 + a_eni[l0])^2) -
+      log(a0)
     W2 <- s2  + sum(W20) + W21
 
     f[[m+1]] <- ELBO(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog)
