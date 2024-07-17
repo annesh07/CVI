@@ -59,18 +59,15 @@ ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   e2 <- sum(e20)
 
   #the X's
-  e30 <- matrix(NA, nrow = N, ncol = T0)
+  #e30 <- matrix(NA, nrow = N, ncol = T0)
   inv_C0 <- solve(C0)
-  for (i in 1:N){
-    for (j in 1:T0){
-      e30[i, j]<- P0[i, j]*(X[i,, drop=FALSE] %*% inv_C0 %*%
-        t(L1[j,, drop=FALSE]/L2[j,1]) - 0.5*X[i,, drop=FALSE] %*% inv_C0 %*%
-        t(X[i,, drop=FALSE]) - 0.5*(D*log(2*pi) +
-        determinant(C0, logarithm=TRUE)$modulus + (L1[j,, drop=FALSE]/L2[j,1])
-        %*% inv_C0 %*% t(L1[j,, drop=FALSE]/L2[j,1])) + sum(diag(inv_C0/L2[j,1])))
-    }
-  }
-  e3 <- sum(e30)
+  L21 <- sweep(L1, 1, L2, "/")
+  e30 <- (-0.5*X %*% inv_C0 %*% t(X)) %*% P0
+  e31 <- (L21 %*% inv_C0 %*% t(X)) %*% P0
+  e32 <- P0 %*% (- 0.5*L21 %*% inv_C0 %*% t(L21))
+  e33 <- sweep(P0, 2, -0.5*L2*sum(diag(inv_C0)), "*")
+  e3 <- sum(P0*(-0.5*D*log(2*pi) - 0.5*determinant(C0, logarithm=TRUE)$modulus))
+    + sum(e30) + sum(e31) + sum(e32) + sum(e33)
 
   #the variationa distributions
   e40 <- W1*log(W2) - lgamma(W1) + (W1-1)*(-log(W2) + digamma(W1)) - W1
