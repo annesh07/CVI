@@ -19,10 +19,13 @@
 #' @export
 #'
 #' @examples CVI(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01,
-#' L20 = 0.01, X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
-#' nrow = 100, ncol = 2), W1 = 0.01, W2 = 0.01,
-#' L1 = matrix(0.01, nrow = 10, ncol = 2), L2 = matrix(0.01, nrow = 10, ncol = 1
-#' ), Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
+#'             L20 = 0.01,
+#'             X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
+#'                 nrow = 100, ncol = 2),
+#'             W1 = 0.01, W2 = 0.01,
+#'             L1 = matrix(0.01, nrow = 10, ncol = 2),
+#'             L2 = matrix(0.01, nrow = 10, ncol = 1),
+#'             Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
 CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
   C0 <- diag(D)
   #the mean vector of the parameters eta_i
@@ -38,6 +41,8 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     #updating the latent probability values
     P0 <- exp(Plog)
     #different updates for i = 1, i = {2, ..., T0-1} and i = T0
+    L21 <- sweep(L1, 1, L2, "/")
+    P230 <- L21 %*% t(X)
     for (n in 1:N){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
@@ -56,13 +61,11 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
         (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
       P22 <- c(0, cumsum(P21)[1:(T0-1)])
 
-      P23 <- rep(NA, T0)
+      P231 <- rep(NA, T0)
       for (i in 1:T0){
-        P23[i] = (L1[i,, drop=FALSE]/L2[i,1]) %*% t(X[n,, drop=FALSE]) -
-          0.5*((L1[i,, drop=FALSE]/L2[i,1]) %*% (t(L1[i,, drop=FALSE])/L2[i,1])
-          + D/L2[i,1])
+        P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
       }
-      P2 <- P20 + P22 + P23
+      P2 <- P20 + P22 + P230[,n] + P231 -0.5*D/L2
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
