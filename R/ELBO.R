@@ -17,10 +17,11 @@
 #' @export
 #'
 #' @examples ELBO(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01, L20 = 0.01,
-#' X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)), nrow = 100,
-#' ncol = 2), W1 = 0.01, W2 = 0.01, L1 = matrix(0.01, nrow = 10, ncol = 2),
-#' L2 = matrix(0.01, nrow = 10, ncol = 1),
-#' Plog = matrix(-3, nrow = 100, ncol = 10))
+#'              X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
+#'                  nrow = 100, ncol = 2),
+#'              W1 = 0.01, W2 = 0.01, L1 = matrix(0.01, nrow = 10, ncol = 2),
+#'              L2 = matrix(0.01, nrow = 10, ncol = 1),
+#'              Plog = matrix(-3, nrow = 100, ncol = 10))
 ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   Mu0 <- matrix(c(rep(0,D)), nrow=1)
   C00 <- diag(D)/L20
@@ -48,15 +49,21 @@ ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   e1 <- T0*(digamma(W1) - log(W2)) + sum(e10)
 
   #the eta's
-  e20 <- rep(NA, T0)
+  # e20 <- rep(NA, T0)
   inv_C00 <- solve(C00)
-  for (i in 1:T0){
-    e20[i] <- -D/2*log(2*pi) + D*0.5*log(L20) -
-      0.5*(((L1[i,, drop=FALSE]/L2[i,1]) %*% inv_C00%*%(t(L1[i,, drop=FALSE])/
-      L2[i,1])) + sum(diag(inv_C00/L2[i,1]))) + Mu0 %*% inv_C00 %*%
-      (t(L1[i,, drop=FALSE])/L2[i,1]) - 0.5*Mu0 %*% inv_C00 %*% t(Mu0)
-  }
-  e2 <- sum(e20)
+  L21 <- sweep(L1, 1, L2, "/")
+  # for (i in 1:T0){
+  #   e20[i] <- -D/2*log(2*pi) + D*0.5*log(L20) -
+  #     0.5*(((L1[i,, drop=FALSE]/L2[i,1]) %*% inv_C00%*%(t(L1[i,, drop=FALSE])/
+  #     L2[i,1])) + sum(diag(inv_C00/L2[i,1]))) + Mu0 %*% inv_C00 %*%
+  #     (t(L1[i,, drop=FALSE])/L2[i,1]) - 0.5*Mu0 %*% inv_C00 %*% t(Mu0)
+  # }
+  e20 <- - 0.5*L21 %*% inv_C00 %*% t(L21)
+  e21 <- - 0.5*L2*sum(diag(inv_C00))
+  e22 <- Mu0 %*% inv_C00 %*% t(L21)
+  e2 <-  T0*(-D/2*log(2*pi) + D*0.5*log(L20)- 0.5*Mu0 %*% inv_C00 %*% t(Mu0)) +
+    sum(e20) + sum(e21) + sum(e22)
+  # e2 <- sum(e20)
 
   #the X's
   #e30 <- matrix(NA, nrow = N, ncol = T0)
