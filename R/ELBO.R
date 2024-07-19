@@ -11,7 +11,7 @@
 #' @param W2 rate parameter for the posterior distribution of alpha
 #' @param L1 1st parameter for the posterior distribution of eta_i's
 #' @param L2 Precision parameter for the posterior distribution of eta_i's
-#' @param Plog Latent probability values
+#' @param Plog Logarithm of Latent allocation probability matrix
 #'
 #' @return value of the ELBO function
 #' @export
@@ -58,8 +58,8 @@ ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   #     L2[i,1])) + sum(diag(inv_C00/L2[i,1]))) + Mu0 %*% inv_C00 %*%
   #     (t(L1[i,, drop=FALSE])/L2[i,1]) - 0.5*Mu0 %*% inv_C00 %*% t(Mu0)
   # }
-  e20 <- - 0.5*L21 %*% inv_C00 %*% t(L21)
-  e21 <- - 0.5*L2*sum(diag(inv_C00))
+  e20 <- diag(-0.5*L21 %*% inv_C00 %*% t(L21))
+  e21 <- -0.5*sum(diag(inv_C00))/L2
   e22 <- Mu0 %*% inv_C00 %*% t(L21)
   e2 <-  T0*(-D/2*log(2*pi) + D*0.5*log(L20)- 0.5*Mu0 %*% inv_C00 %*% t(Mu0)) +
     sum(e20) + sum(e21) + sum(e22)
@@ -69,10 +69,10 @@ ELBO <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog){
   #e30 <- matrix(NA, nrow = N, ncol = T0)
   inv_C0 <- solve(C0)
   L21 <- sweep(L1, 1, L2, "/")
-  e30 <- (-0.5*X %*% inv_C0 %*% t(X)) %*% P0
-  e31 <- (L21 %*% inv_C0 %*% t(X)) %*% P0
-  e32 <- P0 %*% (- 0.5*L21 %*% inv_C0 %*% t(L21))
-  e33 <- sweep(P0, 2, -0.5*L2*sum(diag(inv_C0)), "*")
+  e30 <- sweep(P0, 1, -0.5*diag(X %*% inv_C0 %*% t(X)), "*")
+  e31 <- P0*t(L21 %*% inv_C0 %*% t(X))
+  e32 <- sweep(P0, 2, -0.5*diag(L21 %*% inv_C0 %*% t(L21)), "*")
+  e33 <- sweep(P0, 2, -0.5*sum(diag(inv_C0))/L2, "*")
   e3 <- sum(P0*(-0.5*D*log(2*pi) - 0.5*determinant(C0, logarithm=TRUE)$modulus))
     + sum(e30) + sum(e31) + sum(e32) + sum(e33)
 

@@ -11,11 +11,12 @@
 #' @param W2 rate parameter for the posterior distribution of alpha
 #' @param L1 1st parameter for the posterior distribution of eta_i's
 #' @param L2 Precision parameter for the posterior distribution of eta_i's
-#' @param Plog Latent probability values
+#' @param Plog Logarithm of Latent allocation probability matrix
 #' @param maxit Maximum number of iterations the updates are run
 #'
-#' @return the posterior value of alpha, the number of clusters from latent
-#' probability allocation and the proportions of each cluster
+#' @return the posterior value of alpha, the number of clusters from the
+#' latent allocation probability, the proportions of each cluster and the
+#' latent allocation probability matrix
 #' @export
 #'
 #' @examples CVI(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01,
@@ -43,6 +44,7 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     #different updates for i = 1, i = {2, ..., T0-1} and i = T0
     L21 <- sweep(L1, 1, L2, "/")
     P230 <- L21 %*% t(X)
+    P231 <- diag(-0.5*L21 %*% t(L21))
     for (n in 1:N){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
@@ -61,11 +63,11 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
         (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
       P22 <- c(0, cumsum(P21)[1:(T0-1)])
 
-      P231 <- rep(NA, T0)
-      for (i in 1:T0){
-        P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
-      }
-      P2 <- P20 + P22 + P230[,n] + P231 -0.5*D/L2
+      # P231 <- rep(NA, T0)
+      # for (i in 1:T0){
+      #   P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
+      # }
+      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
