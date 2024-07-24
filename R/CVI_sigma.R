@@ -72,7 +72,7 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
       #   P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
       # }
       # P231 <- diag(-0.5*L21 %*% t(L21))
-      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2
+      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2 + 0.5*D*(digamma(G1) - log(G2))
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
