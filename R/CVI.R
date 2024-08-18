@@ -29,6 +29,8 @@
 #'             Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
 CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
   C0 <- diag(D)
+  inv_C0 <- solve(C0)
+  d_inv_C0 <- diag(inv_C0)
   #the mean vector of the parameters eta_i
   Mu0 <- matrix(c(rep(0,D)), nrow=1)
   #the covariance matrix of the parameters eta_i
@@ -43,8 +45,11 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     P0 <- exp(Plog)
     #different updates for i = 1, i = {2, ..., T0-1} and i = T0
     L21 <- sweep(L1, 1, L2, "/")
-    P230 <- L21 %*% t(X)
-    P231 <- diag(-0.5*L21 %*% t(L21))
+    #P230 <- L21 %*% t(X)
+    P230 <- L21 %*% inv_C0 %*% t(X)
+    #P231 <- diag(-0.5*L21 %*% t(L21))
+    P231 <- diag(-0.5*L21 %*% inv_C0 %*% t(L21)) - 0.5*sum(diag(inv_C0))/L2
+    P232 <- diag(X %*% inv_C0 %*% t(X))
     for (n in 1:N){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
@@ -67,7 +72,8 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
       # for (i in 1:T0){
       #   P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
       # }
-      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2
+      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2 -
+        0.5*(P232[n] + D*log(2*pi) + determinant(C0, logarithm = TRUE)$modulus)
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
@@ -76,7 +82,7 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     #are present in the beginning of the matrix
     P00 <- exp(Plog)
     Csum <- colSums(P00)
-    index <- which(Csum > 0.000001)
+    index <- which(Csum > 1)
     l0 <- length(index)
     for (l in 1:l0){
       Plog[, c(l, index[l])] <- Plog[, c(index[l], l)]
@@ -85,9 +91,11 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
     Pf0 <- exp(Plog)
 
     for (i in 1:T0){
-      #update of the 1st parameter vector of eta_i
-      L1[i,] <- Mu00 + t(Pf0[, i, drop=FALSE])%*%X
-      #update of the 2nd parameter value of eta_i
+      #update of the 1st parameter vector of eta_i, including C0 matrix
+      L1[i,] <- Mu00 + t(Pf0[, i, drop=FALSE]) %*% X %*% inv_C0
+      #update of the 2nd parameter value of eta_i, just fr calculation purpose,
+      #C0 is not included; but here if implies that C0 must be a scalar times
+      #identity matrix
       L2[i, 1] <- L20 + sum(Pf0[, i])
     }
 
