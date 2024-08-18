@@ -72,7 +72,7 @@ CVI <- function(N, D, T0, s1, s2, L20, X, W1, W2, L1, L2, Plog, maxit){
       # for (i in 1:T0){
       #   P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
       # }
-      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2 -
+      P2 <- P20 + P22 + P230[,n] + P231 -
         0.5*(P232[n] + D*log(2*pi) + determinant(C0, logarithm = TRUE)$modulus)
       #log-sum-exp trick
       p0 <- max(P2)

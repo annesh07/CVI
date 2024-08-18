@@ -47,8 +47,9 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
     P0 <- exp(Plog)
     #different updates for i = 1, i = {2, ..., T0-1} and i = T0
     L21 <- sweep(L1, 1, L2, "/")
-    P230 <- L21 %*% t(X)
-    P231 <- diag(-0.5*L21 %*% t(L21))
+    P230 <- (G1/G2)*L21 %*% t(X)
+    P231 <- diag(-0.5*(G1/G2)*L21 %*% t(L21)) - 0.5*D*(G1/G2)/L2
+    P232 <- (G1/G2)*diag(X %*% t(X))
     for (n in 1:N){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
@@ -60,7 +61,7 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
       p_vnj <- rowSums(apply(P1, 1, f1))
 
       P20 <- log(1 + p_eni) - p_vni/((1 + p_eni)^2) - log(1 + p_eni + p_enj +
-                                                            (W1/W2)) + (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
+        (W1/W2)) + (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
 
       P21 <- log((W1/W2) + p_enj) - (p_vnj + (W1/(W2^2)))/(((W1/W2) + p_enj)^2) -
         log(1 + p_eni + p_enj + (W1/W2)) +
@@ -72,7 +73,8 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
       #   P231[i] <- -0.5*L21[i,, drop=FALSE] %*% t(L21[i,, drop=FALSE])
       # }
       # P231 <- diag(-0.5*L21 %*% t(L21))
-      P2 <- P20 + P22 + P230[,n] + P231 - 0.5*D/L2 + 0.5*D*(digamma(G1) - log(G2))
+      P2 <- P20 + P22 + P230[,n] + P231 -
+        0.5*(P232[n] + D*log(2*pi) - D*(digamma(G1) - log(G2)))
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
@@ -91,9 +93,9 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
 
     for (i in 1:T0){
       #update of the 1st parameter vector of eta_i
-      L1[i,] <- Mu00 + t(Pf0[, i, drop=FALSE])%*%X
+      L1[i,] <- Mu00 + (G1/G2)*t(Pf0[, i, drop=FALSE])%*%X
       #update of the 2nd parameter value of eta_i
-      L2[i, 1] <- L20 + sum(Pf0[, i])
+      L2[i, 1] <- L20 + (G1/G2)*sum(Pf0[, i])
     }
 
     L21 <- sweep(L1, 1, L2, "/")
@@ -125,7 +127,7 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
     a_vnj <- rowSums(apply(Pf0[,1:l0], 1, f1))
     W20 <- log(a0 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
       0.5*(a_vni[1:(l0 - 1)] + a_vnj[1:(l0 - 1)])/((a0 + a_eni[1:(l0 - 1)]
-                                                    + a_enj[1:(l0 - 1)])^2) - log(a0 + a_enj[1:(l0 - 1)]) +
+      + a_enj[1:(l0 - 1)])^2) - log(a0 + a_enj[1:(l0 - 1)]) +
       0.5*a_vnj[1:(l0 - 1)]/((a0 + a_enj[1:(l0 - 1)])^2)
     W21 <- log(a0 + a_eni[l0]) - 0.5*a_vni[l0]/((a0 + a_eni[l0])^2) -
       log(a0)
@@ -145,7 +147,8 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
   clust <- table(clustering)
   clustnum <- length(unique(clustering))
 
-  posterior <- list("alpha"=alpha0, "sigma^2"=sigma0, "Clusters"=clustnum, "Proportions"=clust, "Clustering" = Plog)
+  posterior <- list("alpha"=alpha0, "sigma^2"=sigma0, "Clusters"= clustnum,
+                    "Proportions"=clust, "Clustering" = Plog)
   optimisation <- list("ELBO" = f)
 
   output <-  list("posterior" = posterior, "optimisation" = optimisation)
