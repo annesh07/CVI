@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   vimixr_userguide: vimixr_userguide.html
-last_built: 2026-09-09T10:23Z
+last_built: 2026-09-09T10:25Z
 urls:
   reference: https://annesh07.github.io/vimixr/reference
   article: https://annesh07.github.io/vimixr/articles

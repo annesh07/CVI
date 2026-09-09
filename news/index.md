@@ -1,5 +1,7 @@
 # Changelog
 
-## vimixr 0.1.0
+## vimixr 0.1.3
 
-- Initial CRAN submission.
+CRAN release: 2026-09-09
+
+- Updated CRAN submission.
