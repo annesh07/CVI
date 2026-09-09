@@ -37,8 +37,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.25), ncol=2),
           prior_precision_scalar_eta = 0.001,
           post_precision_scalar_eta = matrix(0.001, 20, 1),
           cov_data = diag(ncol(X)))
-k_post[n,1] <- res$posterior$`Cluster number`  
-ari[n,1] <- mclust::adjustedRandIndex(true_l, apply(res$posterior$`log Probability matrix`, 1, which.max))
 summary(res)
   plot(res)
 ```
