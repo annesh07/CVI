@@ -1,3 +1,6 @@
+##Resubmission
+This is a resubmission as a faster update of the vimixr implementation for higher sample size N
+
 ## Resubmission
 This is a resubmission in response to the previous feedbacks. We have made the following changes:
 * Started the Description field with "Collapsed" rather than the name of the package or "This package"

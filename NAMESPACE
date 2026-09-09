@@ -21,29 +21,37 @@ export(sweep_3D)
 export(t_mat_mult)
 import(patchwork)
 importFrom(Rcpp,sourceCpp)
-importFrom(Rfast,Crossprod)
-importFrom(Rfast,Diag.fill)
-importFrom(Rfast,Diag.matrix)
-importFrom(Rfast,colsums)
-importFrom(Rfast,eachcol.apply)
-importFrom(Rfast,eachrow)
-importFrom(Rfast,rowMaxs)
-importFrom(Rfast,rowsums)
-importFrom(Rfast,spdinv)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,geom_line)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,theme_minimal)
+importFrom(Rfast,
+  Crossprod,
+  Diag.fill,
+  Diag.matrix,
+  colsums,
+  eachcol.apply,
+  eachrow,
+  rowMaxs,
+  rowsums,
+  spdinv
+)
+importFrom(ggplot2,
+  aes,
+  geom_line,
+  geom_point,
+  ggplot,
+  labs,
+  theme_minimal
+)
 importFrom(irlba,prcomp_irlba)
-importFrom(parallel,clusterExport)
-importFrom(parallel,detectCores)
-importFrom(parallel,makeCluster)
-importFrom(parallel,stopCluster)
+importFrom(parallel,
+  clusterExport,
+  detectCores,
+  makeCluster,
+  stopCluster
+)
 importFrom(rlang,.data)
-importFrom(stats,prcomp)
-importFrom(stats,rgamma)
-importFrom(stats,uniroot)
+importFrom(stats,
+  prcomp,
+  rgamma,
+  uniroot
+)
 importFrom(utils,tail)
 useDynLib(vimixr, .registration = TRUE)

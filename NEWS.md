@@ -1,3 +1,3 @@
-# vimixr 0.1.0
+# vimixr 0.1.3
 
-* Initial CRAN submission.
+* Updated CRAN submission.
