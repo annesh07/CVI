@@ -10,7 +10,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/annesh07/vimixr/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/annesh07/vimixr/blob/v0.1.3/DESCRIPTION)
 
 Pal A, Hejblum B (2026). *vimixr: Collapsed Variational Inference for
 Dirichlet Process (DP) Mixture Model*. R package version 0.1.2,
