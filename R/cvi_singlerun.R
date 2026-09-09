@@ -213,7 +213,6 @@ run_single <- function(config, X, N, D, T0, prior_shape_alpha, prior_rate_alpha,
                                           X, inverts, params)
     
     params <- updated_params
-    
     elbo_values[[m+1]] <- ELBO_function(fixed_variance, covariance_type,
                                         cluster_specific_covariance,
                                         variance_prior_type, X, inverts, params)
